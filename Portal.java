@@ -36,6 +36,31 @@ public class Portal {
         }
     }
 
+    public void updateSkill(String name, String newSkill) {
+        String sql = "UPDATE freelancers SET skill = ? WHERE name = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newSkill);
+            pstmt.setString(2, name);
+            pstmt.executeUpdate();
+            System.out.println("Skill updated!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteFreelancer(String name) {
+        String sql = "DELETE FROM freelancers WHERE name = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            pstmt.executeUpdate();
+            System.out.println("Freelancer deleted!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void addJob(JobListing job) {
         String sql = "INSERT INTO job_listings (title, budget) VALUES (?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -63,36 +88,32 @@ public class Portal {
         }
     }
 
-    public void assignByNames(String freelancerName, String jobTitle) {
-        String findFreelancer = "SELECT id FROM freelancers WHERE name = ?";
-        String findJob = "SELECT id FROM job_listings WHERE title = ?";
-        String updateSql = "UPDATE job_listings SET freelancer_id = ? WHERE id = ?";
+    public void assignByNames(String fName, String jTitle) {
+        String findF = "SELECT id FROM freelancers WHERE name = ?";
+        String findJ = "SELECT id FROM job_listings WHERE title = ?";
+        String update = "UPDATE job_listings SET freelancer_id = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection()) {
-            int fId = -1;
-            int jId = -1;
-
-            try (PreparedStatement psF = conn.prepareStatement(findFreelancer)) {
-                psF.setString(1, freelancerName);
-                ResultSet rsF = psF.executeQuery();
-                if (rsF.next()) fId = rsF.getInt("id");
+            int fId = -1, jId = -1;
+            try (PreparedStatement ps = conn.prepareStatement(findF)) {
+                ps.setString(1, fName);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) fId = rs.getInt("id");
             }
-
-            try (PreparedStatement psJ = conn.prepareStatement(findJob)) {
-                psJ.setString(1, jobTitle);
-                ResultSet rsJ = psJ.executeQuery();
-                if (rsJ.next()) jId = rsJ.getInt("id");
+            try (PreparedStatement ps = conn.prepareStatement(findJ)) {
+                ps.setString(1, jTitle);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) jId = rs.getInt("id");
             }
-
             if (fId != -1 && jId != -1) {
-                try (PreparedStatement psU = conn.prepareStatement(updateSql)) {
-                    psU.setInt(1, fId);
-                    psU.setInt(2, jId);
-                    psU.executeUpdate();
-                    System.out.println("Success: " + freelancerName + " assigned to " + jobTitle);
+                try (PreparedStatement ps = conn.prepareStatement(update)) {
+                    ps.setInt(1, fId);
+                    ps.setInt(2, jId);
+                    ps.executeUpdate();
+                    System.out.println("Assigned!");
                 }
             } else {
-                System.out.println("Error: Freelancer or Job not found.");
+                System.out.println("Not found!");
             }
         } catch (SQLException e) {
             e.printStackTrace();
